@@ -44,10 +44,10 @@ start(_Type, StartArgs) ->
               [?MODULE, application:start_type()]),
 
     case congestion_watcher_sup:start_link(StartArgs) of
-        {ok, Pid} ->
+        {ok, Pid} = Ok ->
             io:format("DEBUG: ~s:start_phase: self() = ~p, sup pid = ~p\n",
                       [?MODULE, self(), Pid]),
-            {ok, Pid};
+            Ok;
         Error ->
             io:format("DEBUG: ~s:start bummer: ~p\n", [?MODULE, Error]),
             Error

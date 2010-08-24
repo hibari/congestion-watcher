@@ -307,7 +307,7 @@ do_check_congestion(WC, Size, State) ->
 %% Returns the size of an entity identified by the Label
 get_size(Label) ->
     OrigT = list_to_tuple(string:tokens(atom_to_list(Label), ":")),
-    T = case size(OrigT) of
+    T = case tuple_size(OrigT) of
             2 ->
                 %% convert oldstyle format: mnesia:table -> mnesia:items:table
                 {element(1, OrigT), "items", element(2, OrigT)};
@@ -384,7 +384,7 @@ parse_pseudo_csv(Line, File, Acc) ->
     Enabled = gmt_util:boolean_ify(list_to_atom(element(3, T))),
     if
         Enabled ->
-            case size(T) of
+            case tuple_size(T) of
                 9 ->
                     B = #watchee_config{label          = Label,
                                         interval       = list_to_integer(element(2, T)),
