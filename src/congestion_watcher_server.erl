@@ -39,8 +39,8 @@
 
 -behaviour(gen_server).
 
+-include("gmt_elog.hrl").
 -include_lib("kernel/include/file.hrl").
--include("applog.hrl").
 
 -define(SERVER, ?MODULE).
 
@@ -60,11 +60,11 @@
           level = low :: low|warn|high,
           last  = 0   :: non_neg_integer(),
           max   = 0   :: non_neg_integer()
-        }).
+         }).
 
 -record(watchee_config, {
           label            :: atom(),             % mnesia:SIZEKIND:TABLE -or- gen_server:items:NAME (SIZEKIND is bytes or items)
-                                                  % -or- apply:module:function - a function that calculates the size
+                                                % -or- apply:module:function - a function that calculates the size
           interval         :: non_neg_integer(),  % congestion is checked every interval number of msec.
           low_mark         :: non_neg_integer(),
           warn_mark        :: non_neg_integer(),
@@ -149,12 +149,13 @@ handle_call(reload_config, _From, State) ->
     stop_timers(State#state.timer_list),
     try begin
             {ok, ReloadedState} = reset(State),
-            ?APPLOG_INFO_MODULE("CONGESTION", ?APPLOG_INFO_001, "Reload ~p complete.", [State#state.config]),
+            ?ELOG_INFO("Reload ~p complete.", [State#state.config]),
             {reply, ok, ReloadedState}
         end
     catch
         _:Err ->
-            ?APPLOG_WARNING_MODULE("CONGESTION", ?APPLOG_APPM_004, "Reload failed with '~p' for file ~p", [Err, State#state.config]),
+            ?ELOG_WARNING("Reload failed with '~p' for file ~p",
+                          [Err, State#state.config]),
             {reply, reload_error, State}
     end;
 handle_call(_Request, _From, State) ->
@@ -229,7 +230,7 @@ do_mark(WC, State) ->
     Timestamp = gmt_util:cal_to_bignumstr(calendar:now_to_local_time(erlang:now())),
     What = WC#watchee_config.restrict_what,
     WhatInfo = what_info(What, State),
-    ?APPLOG_INFO_MODULE("MARK", ?APPLOG_INFO_002, "~s ~p", [Timestamp, WhatInfo]),
+    ?ELOG_INFO("~s ~p", [Timestamp, WhatInfo]),
     State.
 
 update_winfo(Size, WInfo) ->
@@ -250,27 +251,27 @@ do_check_congestion(WC, Size, State) ->
     if
         Size =< Low ->
             if HLWLevel =/= low ->
-                ?APPLOG_ALERT_MODULE("CONGESTION", ?APPLOG_APPM_001,
-                                     "~p cleared, current_size=~p,low_water_mark=~p", [Label, Size, Low]),
-                NewHLWDict = dict:store(Label, update_winfo(low, Size, WInfo), HLWDict),
-                State#state{hlw_state=NewHLWDict};
-            true ->
-                NewHLWDict = dict:store(Label, update_winfo(Size, WInfo), HLWDict),
-                State#state{hlw_state=NewHLWDict}
+                    ?ELOG_ERROR("~p cleared, current_size=~p,low_water_mark=~p",
+                                [Label, Size, Low]),
+                    NewHLWDict = dict:store(Label, update_winfo(low, Size, WInfo), HLWDict),
+                    State#state{hlw_state=NewHLWDict};
+               true ->
+                    NewHLWDict = dict:store(Label, update_winfo(Size, WInfo), HLWDict),
+                    State#state{hlw_state=NewHLWDict}
             end;
         true ->
             {NewHLWLevel, NewState} =
                 if
                     (Size >= Warn) and (Size < High) and (HLWLevel =:= low) ->
-                        ?APPLOG_ALERT_MODULE("CONGESTION", ?APPLOG_APPM_002,
-                                             "~p warning at size=~p,warning_water_mark=~p", [Label, Size, Warn]),
+                        ?ELOG_ERROR("~p warning at size=~p,warning_water_mark=~p",
+                                    [Label, Size, Warn]),
                         NewHLWDict = dict:store(Label, update_winfo(warn, Size, WInfo), HLWDict),
                         {warn, State#state{hlw_state=NewHLWDict}};
                     true ->
                         if
                             (Size >= High) and (HLWLevel =/= high) ->
-                                ?APPLOG_ALERT_MODULE("CONGESTION", ?APPLOG_APPM_003,
-                                                     "~p is congested. current_size=~p,high_water_mark=~p", [Label, Size, High]),
+                                ?ELOG_ERROR("~p is congested. current_size=~p,high_water_mark=~p",
+                                            [Label, Size, High]),
                                 NewHLWDict = dict:store(Label, update_winfo(high, Size, WInfo), HLWDict),
                                 {high, State#state{hlw_state=NewHLWDict}};
                             true ->
@@ -293,7 +294,8 @@ do_check_congestion(WC, Size, State) ->
                             Msg = {restrict, What, TimeoutMS},
                             case global:whereis_name(Who) of
                                 undefined ->
-                                    ?APPLOG_ALERT_MODULE("CONGESTION", ?APPLOG_APPM_005, "Cannot restrict '~p'. Process not available.", [Who]);
+                                    ?ELOG_ERROR("Cannot restrict '~p'. Process not available.",
+                                                [Who]);
                                 PidOrPort ->
                                     PidOrPort ! Msg
                             end
@@ -342,18 +344,19 @@ get_size(Label) ->
             end;
         'apply' ->
             try begin
-                %% SizeKind => module, Target => Function
-                Size = erlang:apply(SizeKind,Target,[]),
-                if
-                    is_integer(Size) ->
-                        Size;
-                    true ->
-                        throw(lists:flatten(io_lib:format("Bad return type: ~p", [Size])))
+                    %% SizeKind => module, Target => Function
+                    Size = erlang:apply(SizeKind,Target,[]),
+                    if
+                        is_integer(Size) ->
+                            Size;
+                        true ->
+                            throw(lists:flatten(io_lib:format("Bad return type: ~p", [Size])))
+                    end
                 end
-            end
             catch
                 _:Ex ->
-                    ?APPLOG_WARNING_MODULE("CONGESTION", ?APPLOG_APPM_006, "Apply failed with '~p' for function ~p:~p/0", [Ex, SizeKind, Target]),
+                    ?ELOG_WARNING("Apply failed with '~p' for function ~p:~p/0",
+                                  [Ex, SizeKind, Target]),
                     0 % configuration errors shouldn't lead to congestion.
             end
     end.
@@ -366,7 +369,8 @@ parse_pseudo_csv(Path) ->
         end
     catch
         _:Ex ->
-            ?APPLOG_WARNING_MODULE("CONGESTION", ?APPLOG_APPM_007, "Parse error: ~p ~p", [Ex, erlang:get_stacktrace()]),
+            ?ELOG_WARNING("Parse error: ~p ~p",
+                          [Ex, erlang:get_stacktrace()]),
             parse_error
     after
         file:close(F)
@@ -388,7 +392,7 @@ parse_pseudo_csv(Line, File, Acc) ->
                 9 ->
                     B = #watchee_config{label          = Label,
                                         interval       = list_to_integer(element(2, T)),
-                                                        % skip enabled(3) as it's covered in this if
+                                                % skip enabled(3) as it's covered in this if
                                         low_mark       = gmt_util:list_to_bytes(element(4, T)),
                                         warn_mark      = gmt_util:list_to_bytes(element(5, T)),
                                         high_mark      = gmt_util:list_to_bytes(element(6, T)),
@@ -399,7 +403,7 @@ parse_pseudo_csv(Line, File, Acc) ->
                 _ ->
                     throw(bad_field_count)
             end;
-       true ->
+        true ->
             parse_pseudo_csv(read_line(File), File, Acc)
     end.
 

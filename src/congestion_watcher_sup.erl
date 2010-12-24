@@ -56,7 +56,7 @@ init([]) ->
     %% Child_spec = [Name, {M, F, A},
     %%               Restart, Shutdown_time, Type, Modules_used]
 
-    {ok, CWConfig} = gmt_config_svr:get_config_value(congestion_watcher_config, []),
+    {ok, CWConfig} = application:get_env(congestion_watcher, congestion_watcher_config),
     if (CWConfig =:= []) ->
         throw({missing_argument, congestion_watcher_config});
     true ->

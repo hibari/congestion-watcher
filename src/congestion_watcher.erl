@@ -36,7 +36,7 @@
 %%          {error, Reason}
 %%----------------------------------------------------------------------
 start() ->
-    start(xxxwhocares, []).
+    start(normal, []).
 
 start(_Type, StartArgs) ->
     io:format("DEBUG: ~s:start(~p, ~p)\n", [?MODULE, _Type, StartArgs]),

@@ -30,6 +30,7 @@
              , congestion_watcher
              , congestion_watcher_server
              , congestion_watcher_sup
-            ]}
- ]
-}.
+            ]},
+  {env, [{congestion_watcher_config, "congestion_watcher.conf"}
+        ]}
+ ]}.
