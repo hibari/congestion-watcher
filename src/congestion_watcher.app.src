@@ -22,7 +22,7 @@
 {application, congestion_watcher,
  [
   {description, "Monitor high/low and issue restriction control messages"},
-  {vsn, "0.01"},
+  {vsn, "0.1.0"},
   {registered, []},
   {applications, [kernel, stdlib, sasl]},
   {mod, {congestion_watcher, []}},
