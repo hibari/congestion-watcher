@@ -39,34 +39,22 @@ start() ->
     start(normal, []).
 
 start(_Type, StartArgs) ->
-    io:format("DEBUG: ~s:start(~p, ~p)\n", [?MODULE, _Type, StartArgs]),
-    io:format("DEBUG: ~s: application:start_type() = ~p\n",
-              [?MODULE, application:start_type()]),
-
     case congestion_watcher_sup:start_link(StartArgs) of
-        {ok, Pid} = Ok ->
-            io:format("DEBUG: ~s:start_phase: self() = ~p, sup pid = ~p\n",
-                      [?MODULE, self(), Pid]),
+        {ok, _Pid} = Ok ->
             Ok;
         Error ->
-            io:format("DEBUG: ~s:start bummer: ~p\n", [?MODULE, Error]),
             Error
     end.
 
 %% Lesser-used callbacks....
 
 start_phase(_Phase, _StartType, _PhaseArgs) ->
-    io:format("DEBUG: ~s:start_phase(~p, ~p, ~p)\n",
-              [?MODULE, _Phase, _StartType, _PhaseArgs]),
     ok.
 
 prep_stop(State) ->
-    io:format("DEBUG: ~s:prep_stop(~p)\n", [?MODULE, State]),
     State.
 
 config_change(_Changed, _New, _Removed) ->
-    io:format("DEBUG: ~s:config_change(~p, ~p, ~p)\n",
-              [?MODULE, _Changed, _New, _Removed]),
     ok.
 
 
@@ -75,7 +63,6 @@ config_change(_Changed, _New, _Removed) ->
 %% Returns: any
 %%----------------------------------------------------------------------
 stop(_State) ->
-    io:format("DEBUG: ~s:stop(~p)\n", [?MODULE, _State]),
     ok.
 
 %%%----------------------------------------------------------------------
