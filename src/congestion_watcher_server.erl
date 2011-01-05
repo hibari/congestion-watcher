@@ -284,22 +284,23 @@ do_check_congestion(WC, Size, State) ->
             Who = WC#watchee_config.restrict_who,
             if
                 (NewHLWLevel =:= high) andalso (Who =/= undefined) ->
-                    case Who of
-                        halt_vm ->
-                            Slogan = io_lib:format("halt_vm: ~p congested. current_size=~p, high_water_mark=~p", [Label, Size, High]),
-                            erlang:halt(lists:flatten(Slogan));
-                        Who ->
-                            What = WC#watchee_config.restrict_what,
-                            TimeoutMS = WC#watchee_config.restrict_msec,
-                            Msg = {restrict, What, TimeoutMS},
-                            case global:whereis_name(Who) of
-                                undefined ->
-                                    ?ELOG_ERROR("Cannot restrict '~p'. Process not available.",
-                                                [Who]);
-                                PidOrPort ->
-                                    PidOrPort ! Msg
-                            end
-                    end;
+                    _ = case Who of
+                            halt_vm ->
+                                Slogan = io_lib:format("halt_vm: ~p congested. current_size=~p, high_water_mark=~p", [Label, Size, High]),
+                                erlang:halt(lists:flatten(Slogan));
+                            Who ->
+                                What = WC#watchee_config.restrict_what,
+                                TimeoutMS = WC#watchee_config.restrict_msec,
+                                Msg = {restrict, What, TimeoutMS},
+                                case global:whereis_name(Who) of
+                                    undefined ->
+                                        ?ELOG_ERROR("Cannot restrict '~p'. Process not available.",
+                                                    [Who]);
+                                    PidOrPort ->
+                                        PidOrPort ! Msg
+                                end
+                        end,
+                    ok;
                 true ->
                     ok
             end,
@@ -373,7 +374,7 @@ parse_pseudo_csv(Path) ->
                           [Ex, erlang:get_stacktrace()]),
             parse_error
     after
-        file:close(F)
+        ok = file:close(F)
     end.
 
 parse_pseudo_csv(eof, _File, Acc) ->
