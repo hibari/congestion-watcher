@@ -33,4 +33,11 @@
             ]},
   {env, [{congestion_watcher_config, "etc/congestion_watcher.config"}
         ]}
+  %%
+  %% congestion_watcher_config
+  %%   Sets the filename for congestion_watcher.config, the file used
+  %%   for congestion watcher settings. Should it be changed to
+  %%   another file that is readable, it must have the same format as
+  %%   the congestion_watcher.conf file.
+  %%
  ]}.
