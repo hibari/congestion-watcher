@@ -230,7 +230,7 @@ do_mark(WC, State) ->
     Timestamp = gmt_util:cal_to_bignumstr(calendar:now_to_local_time(erlang:now())),
     What = WC#watchee_config.restrict_what,
     WhatInfo = what_info(What, State),
-    ?ELOG_INFO("~s ~p", [Timestamp, WhatInfo]),
+    ?ELOG_INFO("mark: ~s ~p", [Timestamp, WhatInfo]),
     State.
 
 update_winfo(Size, WInfo) ->
