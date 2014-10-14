@@ -50,10 +50,16 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
+-ifdef(namespaced_dict_and_queue).
+-type cw_dict()  :: dict:dict().
+-else.
+-type cw_dict()  :: dict().
+-endif.
+
 -record(state, {
           config                    :: string(),
           timer_list                :: list({ok, reference()}),
-          hlw_state = dict:new()    :: dict()
+          hlw_state = dict:new()    :: cw_dict()
          }).
 
 -record(winfo, {
