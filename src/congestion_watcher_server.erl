@@ -1,5 +1,5 @@
 %%%%----------------------------------------------------------------------
-%%% Copyright (c) 2007-2013 Hibari developers.  All rights reserved.
+%%% Copyright (c) 2007-2015 Hibari developers.  All rights reserved.
 %%%
 %%% Licensed under the Apache License, Version 2.0 (the "License");
 %%% you may not use this file except in compliance with the License.
@@ -50,10 +50,16 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
+-ifdef(namespaced_dict_and_queue).
+-type cw_dict()  :: dict:dict().
+-else.
+-type cw_dict()  :: dict().
+-endif.
+
 -record(state, {
           config                    :: string(),
           timer_list                :: list({ok, reference()}),
-          hlw_state = dict:new()    :: dict()
+          hlw_state = dict:new()    :: cw_dict()
          }).
 
 -record(winfo, {
@@ -230,7 +236,7 @@ do_mark(WC, State) ->
     Timestamp = gmt_util:cal_to_bignumstr(calendar:now_to_local_time(erlang:now())),
     What = WC#watchee_config.restrict_what,
     WhatInfo = what_info(What, State),
-    ?ELOG_INFO("~s ~p", [Timestamp, WhatInfo]),
+    ?ELOG_INFO("mark: ~s ~p", [Timestamp, WhatInfo]),
     State.
 
 update_winfo(Size, WInfo) ->
