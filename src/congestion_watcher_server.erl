@@ -233,7 +233,8 @@ what_info([Label|T], HLWDict, Acc) ->
 
 do_mark(WC, State) ->
     %% Use timestamp in same format as logfile to monitor logging timeliness.
-    Timestamp = gmt_util:cal_to_bignumstr(calendar:now_to_local_time(erlang:now())),
+    Now = gmt_time_otp18:timestamp(),
+    Timestamp = gmt_util:cal_to_bignumstr(calendar:now_to_local_time(Now)),
     What = WC#watchee_config.restrict_what,
     WhatInfo = what_info(What, State),
     ?ELOG_INFO("mark: ~s ~p", [Timestamp, WhatInfo]),
